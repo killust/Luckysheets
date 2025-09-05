@@ -1,26 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/plugins/css/pluginsCss.css' />
-    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/plugins/plugins.css' />
-    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/css/luckysheet.css' />
-    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/assets/iconfont/iconfont.css' />
-    <script src="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/plugins/js/plugin.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/luckysheet.umd.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Luckysheet -->
+  <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/plugins/css/pluginsCss.css' />
+  <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/plugins/plugins.css' />
+  <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/css/luckysheet.css' />
+  <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/assets/iconfont/iconfont.css' />
+  <script src="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/plugins/js/plugin.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luckysheet@latest/dist/luckysheet.umd.js"></script>
+
+  <title>Document</title>
+  <style>
+    #luckysheet_info_detail_title{
+        display: none;
+    }
+  </style>
 </head>
-<body>
-    <div id="luckysheet" style="margin:0px;padding:0px;position:absolute;width:100%;height:100%;left: 0px;top: 0px;"></div>
-    <script>
-    $(function () {
-        //Configuration item
-        var options = {
-            container: 'luckysheet' //luckysheet is the container id
+<body class="d-flex flex-column vh-100">
+
+  <!-- Luckysheet -->
+  <div id="luckysheet" class="flex-grow-1"></div>
+
+  <!-- Controls -->
+  <div class="container py-2 bg-light border-top">
+    <div class="input-group">
+      <button id="getValueBtn" class="btn btn-primary">Get Cell Value</button>
+      <input type="text" id="cellInput" class="form-control" placeholder="Enter cell reference (e.g., A1)">
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      luckysheet.create({
+        container: 'luckysheet'
+      });
+
+      const btn = document.getElementById("getValueBtn");
+      const input = document.getElementById("cellInput");
+
+      btn.addEventListener("click", function () {
+        const ref = input.value.trim().toUpperCase(); // e.g., A1
+        if (!ref) return;
+
+        // Convert A1 -> row/col index
+        const match = ref.match(/^([A-Z]+)([0-9]+)$/);
+        if (!match) {
+          alert("Invalid cell reference!");
+          return;
         }
-        luckysheet.create(options)
-    })
-</script>
+
+        const colLetters = match[1];
+        const rowNumber = parseInt(match[2]);
+
+        // Convert letters to number index
+        let colIndex = 0;
+        for (let i = 0; i < colLetters.length; i++) {
+          colIndex = colIndex * 26 + (colLetters.charCodeAt(i) - 64);
+        }
+        colIndex -= 1; // zero-based
+        const rowIndex = rowNumber - 1;
+
+        // Get value from luckysheet
+        const value = luckysheet.getCellValue(rowIndex, colIndex);
+
+        // Store value in input, localStorage, console, and send to parent
+        if (value !== null && value !== undefined) {
+          input.value = value;
+          localStorage.setItem("lastCellValue", value);
+          console.log("Cell", ref, "Value:", value);
+
+          // 🔑 Send value to parent (GHL)
+          window.parent.postMessage(
+            { cellA1: value },
+            "https://ghl.fedsaferetirement.com" // target GHL origin
+          );
+        } else {
+          alert("No value found in " + ref);
+        }
+      });
+
+      // Load from localStorage if exists
+      const saved = localStorage.getItem("lastCellValue");
+      if (saved) input.value = saved;
+    });
+  </script>
 </body>
 </html>
