@@ -69,7 +69,7 @@
         // Get value from luckysheet
         const value = luckysheet.getCellValue(rowIndex, colIndex);
 
-        // Store value in input, localStorage, console, and send to parent
+        // Store value in input, localStorage, console, and send to parent + form
         if (value !== null && value !== undefined) {
           input.value = value;
           localStorage.setItem("lastCellValue", value);
@@ -80,6 +80,17 @@
             { cellA1: value },
             "https://ghl.fedsaferetirement.com" // target GHL origin
           );
+
+          // 🔑 Also POST value to your form endpoint
+          fetch("https://links.fedsaferetirement.com/widget/form/55eAaUG1iq2daC83Em21?notrack=true", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              "cellA1": value   // adjust key name if your form expects a specific field
+            })
+          })
+          .then(res => console.log("Form submit status:", res.status))
+          .catch(err => console.error("Form submit error:", err));
         } else {
           alert("No value found in " + ref);
         }
